@@ -85,11 +85,11 @@ def check_dependencies() -> list[str]:
     return missing
 
 
-def _call_with_argv(main_fn, argv: list[str]) -> None:
+def _call_with_argv(main_fn, argv: list[str], **kwargs) -> None:
     old = sys.argv[:]
     try:
         sys.argv = argv
-        main_fn()
+        main_fn(**kwargs)
     except SystemExit as exc:
         code = exc.code
         if code not in (0, None):
@@ -159,7 +159,7 @@ class RenderExporter:
             import prepare_render
             import cursor_layer
 
-            update("Reading your Screen Studio project…", 8.0)
+            update("Reading your Screen Studio project…", 1.0)
             try:
                 inspect_bundle.main(self.bundle_path)
             except SystemExit:
@@ -167,7 +167,7 @@ class RenderExporter:
             except Exception:
                 pass  # inspection is best-effort diagnostics
 
-            update("Preparing video layout, zooms, and effects…", 20.0)
+            update("Preparing video layout, zooms, and effects…", 2.0)
             prep = [
                 "prepare_render.py",
                 "--bundle",
@@ -203,8 +203,18 @@ class RenderExporter:
             _call_with_argv(prepare_render.main, prep)
 
             cursor_mode = opts.get("cursor", "auto")
-            if cursor_mode != "off":
-                update("Drawing the mouse cursor and click ripples…", 40.0)
+            has_cursor = cursor_mode != "off"
+            if has_cursor:
+                update("Drawing the mouse cursor and click ripples…", 3.0)
+
+                def _cursor_prog(cur_f: int, tot_f: int) -> None:
+                    if tot_f > 0:
+                        frac = min(1.0, max(0.0, cur_f / tot_f))
+                        update(
+                            f"Drawing the mouse cursor… {int(frac * 100)}%",
+                            3.0 + frac * 7.0,
+                        )
+
                 _call_with_argv(
                     cursor_layer.main,
                     [
@@ -214,6 +224,7 @@ class RenderExporter:
                         "--work",
                         self.work_dir,
                     ],
+                    progress_callback=_cursor_prog,
                 )
 
             plan_path = os.path.join(self.work_dir, "plan.json")
@@ -225,29 +236,31 @@ class RenderExporter:
             except Exception:
                 pass
 
-            update("Rendering video (this is the longest step)…", 42.0)
+            vid_start = 10.0 if has_cursor else 3.0
+            vid_end = 92.0
+            update("Rendering video (this is the longest step)…", vid_start)
             self._run_script(
                 os.path.join(self.work_dir, "render_full.sh"),
                 env=env,
                 progress=update,
                 label="Rendering video",
-                pct_start=42.0,
-                pct_end=82.0,
+                pct_start=vid_start,
+                pct_end=vid_end,
                 duration=out_dur,
             )
 
-            update("Building the audio track…", 84.0)
+            update("Building the audio track…", 92.0)
             self._run_script(
                 os.path.join(self.work_dir, "audio_build.sh"),
                 env=env,
                 progress=update,
                 label="Building audio",
-                pct_start=84.0,
-                pct_end=93.0,
+                pct_start=92.0,
+                pct_end=97.0,
                 duration=out_dur,
             )
 
-            update("Combining video and audio into your MP4…", 95.0)
+            update("Combining video and audio into your MP4…", 97.0)
             self._run_script(os.path.join(self.work_dir, "mux.sh"), env=env)
 
             if not os.path.isfile(self.output_path):

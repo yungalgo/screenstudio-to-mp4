@@ -28,7 +28,7 @@ RIPPLE_STROKE, RIPPLE_A0 = 3.0, 0.35
 HOLD_GAP, LERP_TAIL = 0.5, 0.05
 
 
-def main():
+def main(progress_callback=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--bundle", required=True)
     ap.add_argument("--work", required=True)
@@ -201,6 +201,8 @@ def main():
         for f in range(NF):
             draw(canvas, f, state)
             proc.stdin.write(canvas.tobytes())
+            if progress_callback and NF > 0 and (f % 100 == 0 or f == NF - 1):
+                progress_callback(f, NF)
             if f % 2000 == 0:
                 print(f"frame {f}/{NF} t={f/FPS:.1f}s", flush=True)
     finally:
