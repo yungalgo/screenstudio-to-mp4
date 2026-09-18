@@ -79,11 +79,16 @@ tracker = ProgressTracker()
 def scan_system_bundles() -> list[str]:
     """Find .screenstudio packages in common macOS folders."""
     search_dirs = [
+        os.path.join(HOME, "Screen Studio Projects"),
+        os.path.join(HOME, "Screen Studio"),
         os.path.join(HOME, "Desktop"),
         os.path.join(HOME, "Downloads"),
         os.path.join(HOME, "Movies"),
         os.path.join(HOME, "Documents"),
         os.path.join(HOME, "Movies", "Screen Studio"),
+        os.path.join(HOME, "Movies", "Screen Studio Projects"),
+        os.path.join(HOME, "Documents", "Screen Studio"),
+        os.path.join(HOME, "Documents", "Screen Studio Projects"),
         HOME,
     ]
     found: list[str] = []
@@ -132,11 +137,17 @@ def resolve_bundle_path(input_path: str) -> str:
             return bundle
 
     for parent in (
+        os.path.join(HOME, "Screen Studio Projects"),
+        os.path.join(HOME, "Screen Studio"),
         HOME,
         os.path.join(HOME, "Desktop"),
         os.path.join(HOME, "Downloads"),
         os.path.join(HOME, "Movies"),
         os.path.join(HOME, "Documents"),
+        os.path.join(HOME, "Movies", "Screen Studio"),
+        os.path.join(HOME, "Movies", "Screen Studio Projects"),
+        os.path.join(HOME, "Documents", "Screen Studio"),
+        os.path.join(HOME, "Documents", "Screen Studio Projects"),
     ):
         cand = os.path.join(parent, filename)
         if os.path.isdir(cand):
